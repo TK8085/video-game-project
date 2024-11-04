@@ -1,14 +1,19 @@
 <?php
-// Path to games.csv
-$games_file_path = __DIR__ . '/games.csv';
-
-// Check if games.csv exists
-if (!file_exists($games_file_path)) {
-    die('Error: games.csv file not found.');
+// Database connection
+$host = 'localhost'; 
+$db = 'videogame_store'; 
+$user = 'root'; 
+$pass = ''; 
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Could not connect to the database: " . $e->getMessage());
 }
 
-// Read and process the video games
-$games = array_map('str_getcsv', file($games_file_path));
+// Retrieve all games to display
+$sql = "SELECT * FROM games";
+$games = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -17,20 +22,21 @@ $games = array_map('str_getcsv', file($games_file_path));
     <meta charset="UTF-8">
     <title>Video Game List</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="script.js"></script>
 </head>
 <body>
     <h1>Available Video Games</h1>
 
+    <!-- Link to Add Game Form -->
+    <p><a href="add_game.php">Add a New Video Game</a></p>
+
     <!-- Display the video game list -->
     <ul>
-        <?php foreach ($games as $index => $game): ?>
-            <?php if ($index === 0) continue; // Skip CSV header row ?>
+        <?php foreach ($games as $game): ?>
             <li>
-                <strong><?php echo htmlspecialchars($game[0]); ?></strong> <br>
-                Genre: <?php echo htmlspecialchars($game[1]); ?> <br>
-                Platform: <?php echo htmlspecialchars($game[2]); ?> <br>
-                <img src="<?php echo htmlspecialchars($game[3]); ?>" alt="<?php echo htmlspecialchars($game[0]); ?>"><br>
+                <strong><?php echo htmlspecialchars($game['title']); ?></strong><br>
+                Genre: <?php echo htmlspecialchars($game['genre']); ?><br>
+                Platform: <?php echo htmlspecialchars($game['platform']); ?><br>
+                <img src="images/<?php echo htmlspecialchars($game['image']); ?>" alt="<?php echo htmlspecialchars($game['title']); ?>"><br>
             </li>
         <?php endforeach; ?>
     </ul>
