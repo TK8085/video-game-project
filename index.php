@@ -1,6 +1,9 @@
 <?php
-// Path to users.csv
-$users_file_path = __DIR__ . '/users.csv';
+// Database connection settings
+$host = 'localhost';
+$dbname = 'videogame_store';
+$dbuser = 'root';
+$dbpass = '';
 
 // Check if the form was submitted
 $error_message = '';
@@ -12,27 +15,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($username) || empty($password)) {
         $error_message = 'Username and Password are required!';
     } else {
-        // Check if users.csv exists
-        if (!file_exists($users_file_path)) {
-            die('Error: users.csv file not found.');
-        }
+        try {
+            // Create a new PDO instance
+            $pdo = new PDO("mysql:host=$host;dbname=$dbname", $dbuser, $dbpass);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        // Read and check credentials
-        $users = array_map('str_getcsv', file($users_file_path));
-        $is_valid = false;
-        foreach ($users as $user) {
-            if ($user[0] === $username && $user[1] === $password) {
-                $is_valid = true;
-                break;
+            // Prepare and execute the SQL query
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = :username AND password = :password");
+            $stmt->bindParam(':username', $username);
+            $stmt->bindParam(':password', $password);
+            $stmt->execute();
+
+            // Check if a matching user is found
+            if ($stmt->rowCount() > 0) {
+                header('Location: games.php');
+                exit();
+            } else {
+                $error_message = 'Invalid username or password!';
             }
-        }
 
-        // If valid, redirect to games.php
-        if ($is_valid) {
-            header('Location: games.php');
-            exit();
-        } else {
-            $error_message = 'Invalid username or password!';
+        } catch (PDOException $e) {
+            die("Database error: " . $e->getMessage());
         }
     }
 }
